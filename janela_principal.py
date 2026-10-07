@@ -78,6 +78,10 @@ class JanelaPrincipal(QMainWindow):
         btn_alugar = QPushButton("Alugar Filme Selecionado")
         btn_alugar.clicked.connect(self.abrir_alugar)
         layout_f.addWidget(btn_alugar)
+
+        btn_excluir_filme = QPushButton("Excluir Filme Selecionado")
+        btn_excluir_filme.clicked.connect(self.excluir_filme)
+        layout_f.addWidget(btn_excluir_filme)
         
         self.abas.addTab(tela_filmes, "Filmes")
 
@@ -87,6 +91,10 @@ class JanelaPrincipal(QMainWindow):
         
         self.tabela_clientes = self.criar_tabela(["Nome", "CPF"])
         layout_c.addWidget(self.tabela_clientes)
+
+        btn_excluir_cliente = QPushButton("Excluir Cliente Selecionado")
+        btn_excluir_cliente.clicked.connect(self.excluir_cliente)
+        layout_c.addWidget(btn_excluir_cliente)
         
         self.abas.addTab(tela_clientes, "Clientes")
 
@@ -96,6 +104,10 @@ class JanelaPrincipal(QMainWindow):
         
         self.tabela_historico = self.criar_tabela(["Filme Alugado", "Cliente", "Data"])
         layout_h.addWidget(self.tabela_historico)
+
+        btn_excluir_locacao = QPushButton("Excluir Locacao Selecionada")
+        btn_excluir_locacao.clicked.connect(self.excluir_locacao)
+        layout_h.addWidget(btn_excluir_locacao)
         
         self.abas.addTab(tela_historico, "Histórico de Locações")
 
@@ -121,6 +133,24 @@ class JanelaPrincipal(QMainWindow):
         self.tabela_clientes.setItem(linha, 1, QTableWidgetItem(cliente.cpf))
         self.statusBar().showMessage(f"{cliente.nome} salvo, com sucesso!", 3000)
 
+    def atualizar_tabela_clientes(self):
+        self.tabela_clientes.setRowCount(0)
+        for cliente in self.clientes:
+            linha = self.tabela_clientes.rowCount()
+            self.tabela_clientes.insertRow(linha)
+            self.tabela_clientes.setItem(linha, 0, QTableWidgetItem(cliente.nome))
+            self.tabela_clientes.setItem(linha, 1, QTableWidgetItem(cliente.cpf))
+
+    def excluir_cliente(self):
+        selecionados = self.tabela_clientes.selectionModel().selectedRows()
+        if not selecionados:
+            QMessageBox.information(self, "Aviso", "Selecione um cliente para excluir.")
+            return
+        idx = selecionados[0].row()
+        cliente = self.clientes.pop(idx)
+        self.atualizar_tabela_clientes()
+        self.statusBar().showMessage(f"Cliente {cliente.nome} excluido.", 3000)
+
     def abrir_dialogo_filme(self):
         janela = DialogoAdicionarFilme(self)
         janela.filme_adicionado.connect(self.cadastrar_filme)
@@ -136,6 +166,27 @@ class JanelaPrincipal(QMainWindow):
         self.tabela_filmes.setItem(linha, 3, QTableWidgetItem(f"R$ {filme.preco:.2f}"))
         self.tabela_filmes.setItem(linha, 4, QTableWidgetItem(str(filme.quantidade)))
         self.statusBar().showMessage(f"{filme.titulo} salvo!", 3000)
+
+    def atualizar_tabela_filmes(self):
+        self.tabela_filmes.setRowCount(0)
+        for filme in self.filmes:
+            linha = self.tabela_filmes.rowCount()
+            self.tabela_filmes.insertRow(linha)
+            self.tabela_filmes.setItem(linha, 0, QTableWidgetItem(filme.titulo))
+            self.tabela_filmes.setItem(linha, 1, QTableWidgetItem(str(filme.ano)))
+            self.tabela_filmes.setItem(linha, 2, QTableWidgetItem(filme.genero))
+            self.tabela_filmes.setItem(linha, 3, QTableWidgetItem(f"R$ {float(filme.preco):.2f}"))
+            self.tabela_filmes.setItem(linha, 4, QTableWidgetItem(str(filme.quantidade)))
+
+    def excluir_filme(self):
+        selecionados = self.tabela_filmes.selectionModel().selectedRows()
+        if not selecionados:
+            QMessageBox.information(self, "Aviso", "Selecione um filme para excluir.")
+            return
+        idx = selecionados[0].row()
+        filme = self.filmes.pop(idx)
+        self.atualizar_tabela_filmes()
+        self.statusBar().showMessage(f"Filme {filme.titulo} excluido.", 3000)
 
     def abrir_alugar(self):
         selecionados = self.tabela_filmes.selectionModel().selectedRows()
@@ -178,6 +229,24 @@ class JanelaPrincipal(QMainWindow):
         QMessageBox.information(self, "Sucesso!", f"O filme {filme.titulo} foi alugado para {cliente.nome}.")
         self.statusBar().showMessage("Aluguel finalizada.", 3000)
 
+    def atualizar_tabela_locacoes(self):
+        self.tabela_historico.setRowCount(0)
+        for locacao in self.locacoes:
+            linha = self.tabela_historico.rowCount()
+            self.tabela_historico.insertRow(linha)
+            self.tabela_historico.setItem(linha, 0, QTableWidgetItem(locacao.filme.titulo))
+            self.tabela_historico.setItem(linha, 1, QTableWidgetItem(locacao.cliente.nome))
+            self.tabela_historico.setItem(linha, 2, QTableWidgetItem(locacao.data))
+
+    def excluir_locacao(self):
+        selecionados = self.tabela_historico.selectionModel().selectedRows()
+        if not selecionados:
+            QMessageBox.information(self, "Aviso", "Selecione uma locacao para excluir.")
+            return
+        idx = selecionados[0].row()
+        locacao = self.locacoes.pop(idx)
+        self.atualizar_tabela_locacoes()
+        self.statusBar().showMessage("Locacao excluida.", 3000)
 
     def closeEvent(self, evento: QCloseEvent):
         resposta = QMessageBox.question(
