@@ -1,11 +1,12 @@
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-    QToolBar, QStatusBar, QAbstractItemView, QTabWidget
+    QToolBar, QStatusBar, QAbstractItemView, QTabWidget, QFileDialog
 )
 from PySide6.QtGui import QAction, QCloseEvent
 from dialogos import DialogoAdicionarCliente, DialogoAdicionarFilme, DialogoAlugarFilme
 from modelos import Cliente, Filme, Locacao
+from arquivos import salvar_dados, carregar_dados
 
 
 class JanelaPrincipal(QMainWindow):
@@ -43,6 +44,18 @@ class JanelaPrincipal(QMainWindow):
         btn_novo_cliente = QAction("Cadastrar Cliente", self)
         btn_novo_cliente.triggered.connect(self.abrir_dialogo_cliente)
         menu.addAction(btn_novo_cliente)
+
+        menu.addSeparator()
+
+        btn_salvar = QAction("Salvar Dados", self)
+        btn_salvar.triggered.connect(self.acao_salvar_dados)
+        menu.addAction(btn_salvar)
+
+        btn_carregar = QAction("Carregar Dados", self)
+        btn_carregar.triggered.connect(self.acao_carregar_dados)
+        menu.addAction(btn_carregar)
+
+        menu.addSeparator()
         
         btn_sair = QAction("Sair", self)
         btn_sair.triggered.connect(self.close)
@@ -59,6 +72,8 @@ class JanelaPrincipal(QMainWindow):
         self.addToolBar(barra)
         barra.addAction(btn_novo_filme)
         barra.addAction(btn_novo_cliente)
+        barra.addAction(btn_salvar)
+        barra.addAction(btn_carregar)
 
     def montar_abas(self):
         central = QWidget()
@@ -247,6 +262,46 @@ class JanelaPrincipal(QMainWindow):
         locacao = self.locacoes.pop(idx)
         self.atualizar_tabela_locacoes()
         self.statusBar().showMessage("Locacao excluida.", 3000)
+
+    def acao_salvar_dados(self):
+        caminho, _ = QFileDialog.getSaveFileName(self, "Salvar Dados", "", "JSON Files (*.json);;CSV Files (*.csv)")
+        if caminho:
+            try:
+                msg = salvar_dados(self.filmes, self.clientes, self.locacoes, caminho)
+                QMessageBox.information(self, "Salvar", msg)
+                self.statusBar().showMessage(msg, 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "Erro", f"Ocorreu um erro: {str(e)}")
+
+    def acao_carregar_dados(self):
+        caminho, _ = QFileDialog.getOpenFileName(self, "Carregar Dados", "", "JSON Files (*.json);;CSV Files (*.csv)")
+        if caminho:
+            try:
+                dados = carregar_dados(caminho)
+                self.filmes.clear()
+                self.clientes.clear()
+                self.locacoes.clear()
+                
+                for f in dados.get("filmes", []):
+                    self.filmes.append(Filme(f["titulo"], int(f["ano"]), f["genero"], float(f["preco"]), int(f["quantidade"])))
+                    
+                for c in dados.get("clientes", []):
+                    self.clientes.append(Cliente(c["nome"], c["cpf"]))
+                    
+                for l in dados.get("locacoes", []):
+                    filme_obj = next((f for f in self.filmes if f.titulo == l["filme"]), Filme(l["filme"], 0, "", 0.0, 0))
+                    cliente_obj = next((c for c in self.clientes if c.cpf == l["cliente"]), Cliente(l["cliente"], l["cliente"]))
+                    self.locacoes.append(Locacao(filme_obj, cliente_obj, l["data"]))
+                    
+                self.atualizar_tabela_filmes()
+                self.atualizar_tabela_clientes()
+                self.atualizar_tabela_locacoes()
+                
+                msg = "Dados carregados com sucesso."
+                QMessageBox.information(self, "Carregar", msg)
+                self.statusBar().showMessage(msg, 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "Erro", f"Ocorreu um erro: {str(e)}")
 
     def closeEvent(self, evento: QCloseEvent):
         resposta = QMessageBox.question(
