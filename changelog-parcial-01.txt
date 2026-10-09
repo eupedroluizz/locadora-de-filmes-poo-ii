@@ -1,0 +1,72 @@
+Commit: 84efafe01f60f67318462f31113de4283edac310
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-07 18:41:38 -0300
+
+    Adicionado os arquivos de codigo feitos para o trabalho 01
+
+ dialogos.py         | 167 ++++++++++++++++++++++++++++++++++++++++++++
+ janela_principal.py | 198 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ main.py             |   9 +++
+ modelos.py          |  18 +++++
+ 4 files changed, 392 insertions(+)
+
+Commit: dcdf31e134ba1d7e574385a0cff19855ec11beda
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-07 19:27:17 -0300
+
+    .gitignore adicionado antes que haja algum problema ou erro
+
+ .gitignore | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+Commit: aeb25175e48de160ff957d191b945293d6d2c13c
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-07 20:44:00 -0300
+
+    adicionado a logica e a parte da interface relacionado a exclusao de dados
+
+ janela_principal.py | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
+
+Commit: fbb935b597564dbafa1e25a08a81d40595ff6d0b
+Autor: caua-aquino <cauaaquino386@gmail.com>
+Data: 2026-10-08 19:29:58 -0300
+
+    funcao de salvar dados criada e arquivos.py tambem
+
+ arquivos.py | 37 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+Commit: 8046a85b83e33f1cf8287880ffde02259d00b97d
+Autor: caua-aquino <cauaaquino386@gmail.com>
+Data: 2026-10-08 20:44:34 -0300
+
+    cria base do arquivos.py funcao de salvar dados
+
+ arquivos.py | 37 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+Commit: cd6d7e637d36f638f6b964f22b28d89772d31e06
+Autor: caua-aquino <cauaaquino386@gmail.com>
+Data: 2026-10-09 15:27:39 -0300
+
+    finaliza rotinas de carregamento (json e csv)
+
+ arquivos.py | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+Commit: 6acd9b36db9a404296ad941aaefb72f76554c87c
+Autor: caua-aquino <cauaaquino386@gmail.com>
+Data: 2026-10-09 15:28:47 -0300
+
+    Merge: finaliza rotinas de carregamento
+
+Commit: edcc8a067ce6963d1991f901004177bbe5920631
+Autor: Antônio Jonathan Santos Satiro <antoniojonathan2006@gmail.com>
+Data: 2026-10-09 18:06:20 -0300
+
+    integra leitura aos menus e gera changelog da parcial 1
+
+ changelog_parcial1.txt | Bin 0 -> 886 bytes
+ janela_principal.py    |  57 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 56 insertions(+), 1 deletion(-)
