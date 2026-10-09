@@ -35,3 +35,33 @@ def salvar_dados(filmes, clientes, locacoes, caminho):
         return "Arquivos CSV salvos."
     else:
         raise ValueError("Formato nao suportado.")
+
+def carregar_dados(caminho):
+    _, extensao = os.path.splitext(caminho)
+    dados = {"filmes": [], "clientes": [], "locacoes": []}
+    
+    if extensao.lower() == ".json":
+        with open(caminho, 'r', encoding='utf-8') as f:
+            dados = json.load(f)
+        return dados
+    elif extensao.lower() == ".csv":
+        base = os.path.splitext(caminho)[0]
+        
+        if os.path.exists(f"{base}_filmes.csv"):
+            with open(f"{base}_filmes.csv", 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                dados["filmes"] = list(reader)
+                
+        if os.path.exists(f"{base}_clientes.csv"):
+            with open(f"{base}_clientes.csv", 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                dados["clientes"] = list(reader)
+                
+        if os.path.exists(f"{base}_locacoes.csv"):
+            with open(f"{base}_locacoes.csv", 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                dados["locacoes"] = list(reader)
+                
+        return dados
+    else:
+        raise ValueError("Formato nao suportado.")
