@@ -8,6 +8,8 @@ from dialogos import DialogoAdicionarCliente, DialogoAdicionarFilme, DialogoAlug
 from modelos import Cliente, Filme, Locacao
 from arquivos import salvar_dados, carregar_dados
 
+import datetime
+
 
 class JanelaPrincipal(QMainWindow):
     def __init__(self):
@@ -162,6 +164,13 @@ class JanelaPrincipal(QMainWindow):
             QMessageBox.information(self, "Aviso", "Selecione um cliente para excluir.")
             return
         idx = selecionados[0].row()
+        cliente_alvo = self.clientes[idx]
+
+        for loc in self.locacoes:
+            if loc.cliente == cliente_alvo:
+                QMessageBox.warning(self, "Bloqueado", f"O cliente {cliente_alvo.nome} tem locações ativas e não pode ser excluído.")
+                return
+
         cliente = self.clientes.pop(idx)
         self.atualizar_tabela_clientes()
         self.statusBar().showMessage(f"Cliente {cliente.nome} excluido.", 3000)
@@ -199,6 +208,14 @@ class JanelaPrincipal(QMainWindow):
             QMessageBox.information(self, "Aviso", "Selecione um filme para excluir.")
             return
         idx = selecionados[0].row()
+
+        filme_alvo = self.filmes[idx]
+
+        for loc in self.locacoes:
+            if loc.filme == filme_alvo:
+                QMessageBox.warning(self, "Bloqueado", f"O filme '{filme_alvo.titulo}' está alugado e não pode ser excluído.")
+                return
+
         filme = self.filmes.pop(idx)
         self.atualizar_tabela_filmes()
         self.statusBar().showMessage(f"Filme {filme.titulo} excluido.", 3000)
@@ -232,7 +249,8 @@ class JanelaPrincipal(QMainWindow):
         celula_qtd.setText(str(filme.quantidade))
 
 
-        locacao = Locacao(filme, cliente, "Hoje")
+        data_atual = datetime.date.today().strftime("%d/%m/%Y")
+        locacao = Locacao(filme, cliente, data_atual)
         self.locacoes.append(locacao)
 
         linha = self.tabela_historico.rowCount()
