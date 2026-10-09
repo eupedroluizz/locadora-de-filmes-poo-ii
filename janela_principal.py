@@ -271,6 +271,7 @@ class JanelaPrincipal(QMainWindow):
             self.tabela_historico.setItem(linha, 1, QTableWidgetItem(locacao.cliente.nome))
             self.tabela_historico.setItem(linha, 2, QTableWidgetItem(locacao.data))
 
+
     def excluir_locacao(self):
         selecionados = self.tabela_historico.selectionModel().selectedRows()
         if not selecionados:
@@ -278,7 +279,11 @@ class JanelaPrincipal(QMainWindow):
             return
         idx = selecionados[0].row()
         locacao = self.locacoes.pop(idx)
+        
+        locacao.filme.quantidade += 1
+        
         self.atualizar_tabela_locacoes()
+        self.atualizar_tabela_filmes()
         self.statusBar().showMessage("Locacao excluida.", 3000)
 
     def acao_salvar_dados(self):
