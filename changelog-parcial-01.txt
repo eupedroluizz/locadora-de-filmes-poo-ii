@@ -108,3 +108,13 @@ Data: 2026-10-09 19:09:52 -0300
 
  changelog-parcial-01.txt | 10 ++++++++++
  1 file changed, 10 insertions(+)
+
+Commit: 2c6eba7e713843ff6af04ea37002bba9b5b51551
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-09 19:21:47 -0300
+
+    atualiza estoques apos excluir locacao
+
+ changelog-parcial-01.txt | 9 +++++++++
+ janela_principal.py      | 5 +++++
+ 2 files changed, 14 insertions(+)
