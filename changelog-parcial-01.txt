@@ -70,3 +70,13 @@ Data: 2026-10-09 18:06:20 -0300
  changelog_parcial1.txt | Bin 0 -> 886 bytes
  janela_principal.py    |  57 ++++++++++++++++++++++++++++++++++++++++++++++++-
  2 files changed, 56 insertions(+), 1 deletion(-)
+
+Commit: 7b052d745d2688b474834c798c0243f56163318f
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-09 18:54:03 -0300
+
+    apenas melhora do changelog para mais detalhes
+
+ changelog-parcial-01.txt |  72 +++++++++++++++++++++++++++++++++++++++++++++++
+ changelog_parcial1.txt   | Bin 886 -> 0 bytes
+ 2 files changed, 72 insertions(+)
