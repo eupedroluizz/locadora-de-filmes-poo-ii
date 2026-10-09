@@ -89,3 +89,13 @@ Data: 2026-10-09 18:55:23 -0300
 
  changelog-parcial-01.txt | 10 ++++++++++
  1 file changed, 10 insertions(+)
+
+Commit: d9c1d2e7c0f0ef0ac3bef1e740135c8a0747405a
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-09 19:08:42 -0300
+
+    faz a data estar correta ao alugar um filme e valida se ao excluir um filme ou cliente o mesmo nao esta envolvido em uma locacao
+
+ changelog-parcial-01.txt |  9 +++++++++
+ janela_principal.py      | 20 +++++++++++++++++++-
+ 2 files changed, 28 insertions(+), 1 deletion(-)
