@@ -30,11 +30,11 @@ class JanelaPrincipal(QMainWindow):
         self.statusBar().showMessage("Sistema pronto.")
 
         #Somente para demonstarção
-        self.cadastrar_cliente(Cliente("Jaiminho da Vila Santos", "067.123.897-67"))
+        """ self.cadastrar_cliente(Cliente("Jaiminho da Vila Santos", "067.123.897-67"))
         self.cadastrar_filme(Filme("Superman", 2025, "Ação", 12.00, 3))
         self.cadastrar_filme(Filme("Pelé: O Filme", 1978, "Ação", 25.00, 1))
         self.cadastrar_filme(Filme("It: A Coisa", 2017, "Terror", 7.00, 2))
-        self.cadastrar_filme(Filme("Resident Evil", 2026, "Terror", 10.00, 5))
+        self.cadastrar_filme(Filme("Resident Evil", 2026, "Terror", 10.00, 5)) """
 
     def montar_menus(self):
 
@@ -145,11 +145,8 @@ class JanelaPrincipal(QMainWindow):
 
     def cadastrar_cliente(self, cliente):
         self.clientes.append(cliente)
-        linha = self.tabela_clientes.rowCount()
-        self.tabela_clientes.insertRow(linha)
-        self.tabela_clientes.setItem(linha, 0, QTableWidgetItem(cliente.nome))
-        self.tabela_clientes.setItem(linha, 1, QTableWidgetItem(cliente.cpf))
-        self.statusBar().showMessage(f"{cliente.nome} salvo, com sucesso!", 3000)
+        self.atualizar_tabela_clientes()
+        self.statusBar().showMessage(f"{cliente.nome} salvo com sucesso!", 3000)
 
     def atualizar_tabela_clientes(self):
         self.tabela_clientes.setRowCount(0)
@@ -183,13 +180,7 @@ class JanelaPrincipal(QMainWindow):
 
     def cadastrar_filme(self, filme):
         self.filmes.append(filme)
-        linha = self.tabela_filmes.rowCount()
-        self.tabela_filmes.insertRow(linha)
-        self.tabela_filmes.setItem(linha, 0, QTableWidgetItem(filme.titulo))
-        self.tabela_filmes.setItem(linha, 1, QTableWidgetItem(str(filme.ano)))
-        self.tabela_filmes.setItem(linha, 2, QTableWidgetItem(filme.genero))
-        self.tabela_filmes.setItem(linha, 3, QTableWidgetItem(f"R$ {filme.preco:.2f}"))
-        self.tabela_filmes.setItem(linha, 4, QTableWidgetItem(str(filme.quantidade)))
+        self.atualizar_tabela_filmes()
         self.statusBar().showMessage(f"{filme.titulo} salvo!", 3000)
 
     def atualizar_tabela_filmes(self):
@@ -224,44 +215,31 @@ class JanelaPrincipal(QMainWindow):
     def abrir_alugar(self):
         selecionados = self.tabela_filmes.selectionModel().selectedRows()
         if not selecionados:
-            QMessageBox.information(self, "Atenção!", "Selecione um filme na tabela primeiro.")
+            QMessageBox.information(self, "Aviso", "Selecione um filme na tabela primeiro.")
             return
-
         if not self.clientes:
-            QMessageBox.warning(self, "Atenção!!", "Você precisa cadastrar um cliente antes.")
+            QMessageBox.warning(self, "Aviso", "Você precisa cadastrar um cliente antes.")
             return
-
         idx = selecionados[0].row()
         filme = self.filmes[idx]
-
         if filme.quantidade <= 0:
-            QMessageBox.warning(self, "Esgotado", "Não temos mais cópias deste filme,")
+            QMessageBox.warning(self, "Aviso", "Nao temos mais copias deste filme.")
             return
-
         janela = DialogoAlugarFilme(self.clientes, self)
-        janela.aluguel_confirmado.connect(lambda cliente: self.efetuar_locacao(filme, cliente, idx))
+        janela.aluguel_confirmado.connect(lambda cliente: self.efetuar_locacao(filme, cliente))
         janela.exec()
 
-    def efetuar_locacao(self, filme, cliente, linha_tabela):
+    def efetuar_locacao(self, filme, cliente):
         filme.quantidade -= 1
+        self.atualizar_tabela_filmes()
         
-
-        celula_qtd = self.tabela_filmes.item(linha_tabela, 4)
-        celula_qtd.setText(str(filme.quantidade))
-
-
         data_atual = datetime.date.today().strftime("%d/%m/%Y")
         locacao = Locacao(filme, cliente, data_atual)
+        
         self.locacoes.append(locacao)
-
-        linha = self.tabela_historico.rowCount()
-        self.tabela_historico.insertRow(linha)
-        self.tabela_historico.setItem(linha, 0, QTableWidgetItem(locacao.filme.titulo))
-        self.tabela_historico.setItem(linha, 1, QTableWidgetItem(locacao.cliente.nome))
-        self.tabela_historico.setItem(linha, 2, QTableWidgetItem(locacao.data))
-
-        QMessageBox.information(self, "Sucesso!", f"O filme {filme.titulo} foi alugado para {cliente.nome}.")
-        self.statusBar().showMessage("Aluguel finalizada.", 3000)
+        self.atualizar_tabela_locacoes()
+        QMessageBox.information(self, "Sucesso", f"O filme {filme.titulo} foi alugado para {cliente.nome}.")
+        self.statusBar().showMessage("Aluguel finalizado.", 3000)
 
     def atualizar_tabela_locacoes(self):
         self.tabela_historico.setRowCount(0)
@@ -355,4 +333,4 @@ class JanelaPrincipal(QMainWindow):
                           "Feito por:\n"
                           "- Antônio Jonathan Santos Sátiro\n"
                           "- Cauã Aquino Honorato Oliveira\n"
-                          "- Pedro Luiz Moura Marques")
+                          "- Pedro Luiz Moura Marques")  
