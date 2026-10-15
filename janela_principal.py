@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QAction, QCloseEvent
 from dialogos import DialogoAdicionarCliente, DialogoAdicionarFilme, DialogoAlugarFilme
 from modelos import Cliente, Filme, Locacao
-from arquivos import salvar_dados, carregar_dados
+from arquivos import Trabalhador, salvar_dados, carregar_dados
 
 import datetime
 
@@ -21,6 +21,7 @@ class JanelaPrincipal(QMainWindow):
         self.clientes = []
         self.filmes = []
         self.locacoes = []
+        self.trabalhadores = []
 
         self.montar_menus()
         self.montar_abas()
@@ -289,42 +290,54 @@ class JanelaPrincipal(QMainWindow):
     def acao_salvar_dados(self):
         caminho, _ = QFileDialog.getSaveFileName(self, "Salvar Dados", "", "JSON Files (*.json);;CSV Files (*.csv)")
         if caminho:
-            try:
-                msg = salvar_dados(self.filmes, self.clientes, self.locacoes, caminho)
-                QMessageBox.information(self, "Salvar", msg)
-                self.statusBar().showMessage(msg, 3000)
-            except Exception as e:
-                QMessageBox.critical(self, "Erro", f"Ocorreu um erro: {str(e)}")
+            self.statusBar().showMessage("Salvando dados em segundo plano...")
+            t = Trabalhador(salvar_dados, self.filmes, self.clientes, self.locacoes, caminho)
+            t.sinais.resultado_salvar.connect(self.mostrar_mensagem_salvar)
+            t.sinais.erro.connect(self.mostrar_erro)
+            self.trabalhadores.append(t)
+            t.start()
 
     def acao_carregar_dados(self):
         caminho, _ = QFileDialog.getOpenFileName(self, "Carregar Dados", "", "JSON Files (*.json);;CSV Files (*.csv)")
         if caminho:
-            try:
-                dados = carregar_dados(caminho)
-                self.filmes.clear()
-                self.clientes.clear()
-                self.locacoes.clear()
-                
-                for f in dados.get("filmes", []):
-                    self.filmes.append(Filme(f["titulo"], int(f["ano"]), f["genero"], float(f["preco"]), int(f["quantidade"])))
-                    
-                for c in dados.get("clientes", []):
-                    self.clientes.append(Cliente(c["nome"], c["cpf"]))
-                    
-                for l in dados.get("locacoes", []):
-                    filme_obj = next((f for f in self.filmes if f.titulo == l["filme"]), Filme(l["filme"], 0, "", 0.0, 0))
-                    cliente_obj = next((c for c in self.clientes if c.cpf == l["cliente"]), Cliente(l["cliente"], l["cliente"]))
-                    self.locacoes.append(Locacao(filme_obj, cliente_obj, l["data"]))
-                    
-                self.atualizar_tabela_filmes()
-                self.atualizar_tabela_clientes()
-                self.atualizar_tabela_locacoes()
-                
-                msg = "Dados carregados com sucesso."
-                QMessageBox.information(self, "Carregar", msg)
-                self.statusBar().showMessage(msg, 3000)
-            except Exception as e:
-                QMessageBox.critical(self, "Erro", f"Ocorreu um erro: {str(e)}")
+            self.statusBar().showMessage("Carregando dados em segundo plano...")
+            t = Trabalhador(carregar_dados, caminho)
+            t.sinais.resultado_carregar.connect(self.processar_dados_carregados)
+            t.sinais.erro.connect(self.mostrar_erro)
+            self.trabalhadores.append(t)
+            t.start()
+
+    def mostrar_mensagem_salvar(self, msg):
+        QMessageBox.information(self, "Salvar", msg)
+        self.statusBar().showMessage(msg, 3000)
+
+    def processar_dados_carregados(self, dados):
+        self.filmes.clear()
+        self.clientes.clear()
+        self.locacoes.clear()
+        
+        for f in dados.get("filmes", []):
+            self.filmes.append(Filme(f["titulo"], int(f["ano"]), f["genero"], float(f["preco"]), int(f["quantidade"])))
+            
+        for c in dados.get("clientes", []):
+            self.clientes.append(Cliente(c["nome"], c["cpf"]))
+            
+        for l in dados.get("locacoes", []):
+            filme_obj = next((f for f in self.filmes if f.titulo == l["filme"]), Filme(l["filme"], 0, "", 0.0, 0))
+            cliente_obj = next((c for c in self.clientes if c.cpf == l["cliente"]), Cliente(l["cliente"], l["cliente"]))
+            self.locacoes.append(Locacao(filme_obj, cliente_obj, l["data"]))
+            
+        self.atualizar_tabela_filmes()
+        self.atualizar_tabela_clientes()
+        self.atualizar_tabela_locacoes()
+        
+        msg = "Dados carregados com sucesso."
+        QMessageBox.information(self, "Carregar", msg)
+        self.statusBar().showMessage(msg, 3000)
+
+    def mostrar_erro(self, erro):
+        QMessageBox.critical(self, "Erro", f"Ocorreu um erro: {erro}")
+        self.statusBar().showMessage("Erro na operacao de arquivo.", 3000)
 
     def closeEvent(self, evento: QCloseEvent):
         resposta = QMessageBox.question(
