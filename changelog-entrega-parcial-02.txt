@@ -155,3 +155,23 @@ Data: 2026-10-15 19:45:32 -0300
  changelog-parcial-01.txt | 120 -----------------------------------------------
  janela_principal.py      |  54 +++++++--------------
  2 files changed, 16 insertions(+), 158 deletions(-)
+
+Commit: 2d80ce4a6e5104ce83e45395773148ef188e1819
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-15 19:49:57 -0300
+
+    adiciona cahngelog
+
+ changelog-entrega-parcial-02.txt | 157 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 157 insertions(+)
+
+Commit: 9d5221777fd9690924ad738271208b2b931730a8
+Autor: Pedro Luiz <eupedroluizz@gmail.com>
+Data: 2026-10-15 21:10:51 -0300
+
+    adiciona logica e interface de busca alem de corrigir erros simples de falta de atencao
+
+ arquivos.py         | 123 +++++++++++++++++++++----------
+ dialogos.py         |   4 +-
+ janela_principal.py | 205 ++++++++++++++++++++++++++++++++++++----------------
+ 3 files changed, 230 insertions(+), 102 deletions(-)
