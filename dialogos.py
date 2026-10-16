@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 from modelos import Cliente, Filme
 
+import datetime
+
 
 class DialogoAdicionarCliente(QDialog):
     cliente_adicionado = Signal(object)
@@ -74,7 +76,7 @@ class DialogoAdicionarFilme(QDialog):
         box_ano.addWidget(QLabel("Ano:"))
         self.campo_ano = QSpinBox()
         self.campo_ano.setRange(1900, 2100)
-        self.campo_ano.setValue(2025)
+        self.campo_ano.setValue(datetime.date.today().year)
         box_ano.addWidget(self.campo_ano)
         layout_principal.addLayout(box_ano)
 
