@@ -93,8 +93,12 @@ def salvar_dados(filmes, clientes, locacoes, caminho):
     else:
         raise ValueError(f"Formato '{extensao}' não suportado. Utilize .json ou .csv.")
 
+import time
 
 def carregar_dados(caminho):
+
+    # time.sleep(7)
+
     _, extensao = os.path.splitext(caminho)
     dados = {"filmes": [], "clientes": [], "locacoes": []}
 

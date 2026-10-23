@@ -358,6 +358,11 @@ class JanelaPrincipal(QMainWindow):
             self.trabalhadores.append(t)
             t.start()
 
+        # if caminho:
+        #             self.statusBar().showMessage("Carregando dados...")
+        #             dados = carregar_dados(caminho)
+        #             self.processar_dados_carregados(dados)
+        
     def limpar_trabalhador(self, t):
         if t in self.trabalhadores:
             self.trabalhadores.remove(t)
