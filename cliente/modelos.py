@@ -12,7 +12,8 @@ class Filme:
         self.quantidade = quantidade
 
 class Locacao:
-    def __init__(self, filme, cliente, data):
+    def __init__(self, filme, cliente, data, locacao_id=None):
         self.filme = filme
         self.cliente = cliente
         self.data = data
+        self.locacao_id = locacao_id
