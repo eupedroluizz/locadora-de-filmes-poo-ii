@@ -29,13 +29,6 @@ class JanelaPrincipal(QMainWindow):
         self.setStatusBar(QStatusBar())
         self.statusBar().showMessage("Sistema pronto.")
 
-        #Somente para demonstarção
-        """ self.cadastrar_cliente(Cliente("Jaiminho da Vila Santos", "067.123.897-67"))
-        self.cadastrar_filme(Filme("Superman", 2025, "Ação", 12.00, 3))
-        self.cadastrar_filme(Filme("Pelé: O Filme", 1978, "Ação", 25.00, 1))
-        self.cadastrar_filme(Filme("It: A Coisa", 2017, "Terror", 7.00, 2))
-        self.cadastrar_filme(Filme("Resident Evil", 2026, "Terror", 10.00, 5)) """
-
     def montar_menus(self):
         menu = self.menuBar().addMenu("Arquivo")
 
@@ -357,11 +350,6 @@ class JanelaPrincipal(QMainWindow):
             t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
             self.trabalhadores.append(t)
             t.start()
-
-        # if caminho:
-        #             self.statusBar().showMessage("Carregando dados...")
-        #             dados = carregar_dados(caminho)
-        #             self.processar_dados_carregados(dados)
         
     def limpar_trabalhador(self, t):
         if t in self.trabalhadores:
