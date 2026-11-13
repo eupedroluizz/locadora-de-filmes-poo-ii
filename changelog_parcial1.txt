@@ -1,0 +1,8 @@
+5307dab conecta interface grafica com rotas de clientes e filmes da api
+7eb97d1 cria cliente http e thread worker para requisicoes da api
+361ec43 cria servidor fastapi com rotas completas de clientes e filmes
+12fe65c Adiciona a conexao com postgres e operacoes basicas de cliente e filme
+239ddd1 configura o docker compose do postgres e tabelas iniciais no init sql.
+88392d9 adiciona pasta servidor
+83afcfb atualiza modelos com id de locacao e validacoes nos dialogos
+cd94659 reorganiza estrutura do projeto separando cliente e servidor
