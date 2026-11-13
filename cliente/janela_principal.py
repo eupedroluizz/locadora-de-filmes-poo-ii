@@ -1,410 +1,217 @@
-import os
-import datetime
+import sys
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-    QToolBar, QStatusBar, QAbstractItemView, QTabWidget, QFileDialog,
-    QLineEdit, QLabel
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QTableWidget, QTableWidgetItem, QPushButton,
+    QLabel, QLineEdit, QHeaderView, QMessageBox,
+    QTabWidget, QAbstractItemView
 )
-from PySide6.QtGui import QAction, QCloseEvent
-from dialogos import DialogoAdicionarCliente, DialogoAdicionarFilme, DialogoAlugarFilme
-from modelos import Cliente, Filme, Locacao
-from arquivos import Trabalhador, salvar_dados, carregar_dados
-
+from modelos import Cliente, Filme
+from dialogos import DialogoAdicionarCliente, DialogoAdicionarFilme
+from threads import Trabalhador
+import api_cliente
 
 class JanelaPrincipal(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Locadora de Filmes")
-        self.setMinimumSize(800, 550)
+        self.setWindowTitle("Locadora de Filmes - Interface Inicial")
+        self.setMinimumSize(850, 550)
 
-        self.clientes = []
         self.filmes = []
-        self.locacoes = []
+        self.clientes = []
         self.trabalhadores = []
 
-        self.montar_menus()
-        self.montar_abas()
+        self.construir_interface()
+        self.carregar_dados_completos()
 
-        self.setStatusBar(QStatusBar())
-        self.statusBar().showMessage("Sistema pronto.")
-
-    def montar_menus(self):
-        menu = self.menuBar().addMenu("Arquivo")
-
-        btn_novo_filme = QAction("Adicionar Filme", self)
-        btn_novo_filme.triggered.connect(self.abrir_dialogo_filme)
-        menu.addAction(btn_novo_filme)
-
-        btn_novo_cliente = QAction("Cadastrar Cliente", self)
-        btn_novo_cliente.triggered.connect(self.abrir_dialogo_cliente)
-        menu.addAction(btn_novo_cliente)
-
-        menu.addSeparator()
-
-        btn_salvar = QAction("Salvar Dados", self)
-        btn_salvar.triggered.connect(self.acao_salvar_dados)
-        menu.addAction(btn_salvar)
-
-        btn_carregar = QAction("Carregar Dados", self)
-        btn_carregar.triggered.connect(self.acao_carregar_dados)
-        menu.addAction(btn_carregar)
-
-        menu.addSeparator()
-
-        btn_sair = QAction("Sair", self)
-        btn_sair.triggered.connect(self.close)
-        menu.addAction(btn_sair)
-
-        ajuda = self.menuBar().addMenu("Ajuda")
-        btn_sobre = QAction("Sobre", self)
-        btn_sobre.triggered.connect(self.mostrar_sobre)
-        ajuda.addAction(btn_sobre)
-
-        barra = QToolBar("Atalhos")
-        self.addToolBar(barra)
-        barra.addAction(btn_novo_filme)
-        barra.addAction(btn_novo_cliente)
-        barra.addAction(btn_salvar)
-        barra.addAction(btn_carregar)
-
-    def montar_abas(self):
-        central = QWidget()
-        self.setCentralWidget(central)
-        layout_base = QVBoxLayout(central)
+    def construir_interface(self):
+        widget_central = QWidget()
+        self.setCentralWidget(widget_central)
+        layout_central = QVBoxLayout(widget_central)
 
         self.abas = QTabWidget()
-        layout_base.addWidget(self.abas)
+        layout_central.addWidget(self.abas)
 
-        tela_filmes = QWidget()
-        layout_f = QVBoxLayout(tela_filmes)
+        aba_filmes = QWidget()
+        layout_f = QVBoxLayout(aba_filmes)
 
-        box_busca_filme = QHBoxLayout()
-        box_busca_filme.addWidget(QLabel("Consultar Filme:"))
+        box_acoes_f = QHBoxLayout()
+        self.btn_novo_filme = QPushButton("Cadastrar Filme")
+        self.btn_novo_filme.clicked.connect(self.abrir_dialogo_filme)
+        self.btn_atualizar = QPushButton("Atualizar Dados")
+        self.btn_atualizar.clicked.connect(self.carregar_dados_completos)
+        box_acoes_f.addWidget(self.btn_novo_filme)
+        box_acoes_f.addWidget(self.btn_atualizar)
+        box_acoes_f.addStretch()
+        layout_f.addLayout(box_acoes_f)
+
+        box_busca_f = QHBoxLayout()
+        box_busca_f.addWidget(QLabel("Pesquisar:"))
         self.busca_filme = QLineEdit()
-        self.busca_filme.setPlaceholderText("Digite o título ou gênero para pesquisar...")
+        self.busca_filme.setPlaceholderText("Filtrar filmes por titulo ou genero...")
         self.busca_filme.textChanged.connect(self.filtrar_filmes)
-        box_busca_filme.addWidget(self.busca_filme)
-        layout_f.addLayout(box_busca_filme)
+        box_busca_f.addWidget(self.busca_filme)
+        layout_f.addLayout(box_busca_f)
 
-        self.tabela_filmes = self.criar_tabela(["Título", "Ano", "Gênero", "Preço", "Quantidade"])
+        self.tabela_filmes = self.criar_tabela(["Titulo", "Ano", "Genero", "Preco (R$)", "Quantidade"])
+        self.tabela_filmes.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        for i in range(1, 5):
+            self.tabela_filmes.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
         layout_f.addWidget(self.tabela_filmes)
 
-        box_botoes_f = QHBoxLayout()
-        btn_alugar = QPushButton("Alugar Filme Selecionado")
-        btn_alugar.clicked.connect(self.abrir_alugar)
-        box_botoes_f.addWidget(btn_alugar)
+        self.abas.addTab(aba_filmes, "Acervo de Filmes")
 
-        btn_excluir_filme = QPushButton("Excluir Filme Selecionado")
-        btn_excluir_filme.clicked.connect(self.excluir_filme)
-        box_botoes_f.addWidget(btn_excluir_filme)
-        layout_f.addLayout(box_botoes_f)
+        aba_clientes = QWidget()
+        layout_c = QVBoxLayout(aba_clientes)
 
-        self.abas.addTab(tela_filmes, "Filmes")
+        box_acoes_c = QHBoxLayout()
+        self.btn_novo_cliente = QPushButton("Cadastrar Cliente")
+        self.btn_novo_cliente.clicked.connect(self.abrir_dialogo_cliente)
+        box_acoes_c.addWidget(self.btn_novo_cliente)
+        box_acoes_c.addStretch()
+        layout_c.addLayout(box_acoes_c)
 
-        tela_clientes = QWidget()
-        layout_c = QVBoxLayout(tela_clientes)
-
-        box_busca_cliente = QHBoxLayout()
-        box_busca_cliente.addWidget(QLabel("Consultar Cliente:"))
+        box_busca_c = QHBoxLayout()
+        box_busca_c.addWidget(QLabel("Pesquisar:"))
         self.busca_cliente = QLineEdit()
-        self.busca_cliente.setPlaceholderText("Digite o nome ou CPF para pesquisar...")
+        self.busca_cliente.setPlaceholderText("Filtrar clientes por nome ou CPF...")
         self.busca_cliente.textChanged.connect(self.filtrar_clientes)
-        box_busca_cliente.addWidget(self.busca_cliente)
-        layout_c.addLayout(box_busca_cliente)
+        box_busca_c.addWidget(self.busca_cliente)
+        layout_c.addLayout(box_busca_c)
 
         self.tabela_clientes = self.criar_tabela(["Nome", "CPF"])
+        self.tabela_clientes.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.tabela_clientes.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         layout_c.addWidget(self.tabela_clientes)
 
-        btn_excluir_cliente = QPushButton("Excluir Cliente Selecionado")
-        btn_excluir_cliente.clicked.connect(self.excluir_cliente)
-        layout_c.addWidget(btn_excluir_cliente)
-
-        self.abas.addTab(tela_clientes, "Clientes")
-
-        tela_historico = QWidget()
-        layout_h = QVBoxLayout(tela_historico)
-
-        box_busca_loc = QHBoxLayout()
-        box_busca_loc.addWidget(QLabel("Consultar Locação:"))
-        self.busca_locacao = QLineEdit()
-        self.busca_locacao.setPlaceholderText("Digite o filme ou cliente para pesquisar...")
-        self.busca_locacao.textChanged.connect(self.filtrar_locacoes)
-        box_busca_loc.addWidget(self.busca_locacao)
-        layout_h.addLayout(box_busca_loc)
-
-        self.tabela_historico = self.criar_tabela(["Filme Alugado", "Cliente", "Data"])
-        layout_h.addWidget(self.tabela_historico)
-
-        btn_excluir_locacao = QPushButton("Excluir Locação Selecionada")
-        btn_excluir_locacao.clicked.connect(self.excluir_locacao)
-        layout_h.addWidget(btn_excluir_locacao)
-
-        self.abas.addTab(tela_historico, "Histórico de Locações")
+        self.abas.addTab(aba_clientes, "Clientes")
 
     def criar_tabela(self, colunas):
-        tabela = QTableWidget(0, len(colunas))
+        tabela = QTableWidget()
+        tabela.setColumnCount(len(colunas))
         tabela.setHorizontalHeaderLabels(colunas)
-        tabela.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         tabela.setSelectionBehavior(QAbstractItemView.SelectRows)
         tabela.setEditTriggers(QAbstractItemView.NoEditTriggers)
         return tabela
 
-    def filtrar_filmes(self, termo):
-        termo = termo.strip().lower()
-        for linha in range(self.tabela_filmes.rowCount()):
-            item_titulo = self.tabela_filmes.item(linha, 0)
-            item_genero = self.tabela_filmes.item(linha, 2)
-            titulo = item_titulo.text().lower() if item_titulo else ""
-            genero = item_genero.text().lower() if item_genero else ""
-            corresponde = termo in titulo or termo in genero
-            self.tabela_filmes.setRowHidden(linha, not corresponde)
+    def definir_botoes_habilitados(self, habilitado):
+        self.btn_novo_filme.setEnabled(habilitado)
+        self.btn_novo_cliente.setEnabled(habilitado)
+        self.btn_atualizar.setEnabled(habilitado)
 
-    def filtrar_clientes(self, termo):
-        termo = termo.strip().lower()
-        for linha in range(self.tabela_clientes.rowCount()):
-            item_nome = self.tabela_clientes.item(linha, 0)
-            item_cpf = self.tabela_clientes.item(linha, 1)
-            nome = item_nome.text().lower() if item_nome else ""
-            cpf = item_cpf.text().lower() if item_cpf else ""
-            corresponde = termo in nome or termo in cpf
-            self.tabela_clientes.setRowHidden(linha, not corresponde)
+    def carregar_dados_completos(self):
+        self.definir_botoes_habilitados(False)
+        self.statusBar().showMessage("Carregando dados da API...")
+        def rotina():
+            c = api_cliente.listar_clientes()
+            f = api_cliente.listar_filmes()
+            return {"clientes": c, "filmes": f}
 
-    def filtrar_locacoes(self, termo):
-        termo = termo.strip().lower()
-        for linha in range(self.tabela_historico.rowCount()):
-            item_filme = self.tabela_historico.item(linha, 0)
-            item_cliente = self.tabela_historico.item(linha, 1)
-            filme = item_filme.text().lower() if item_filme else ""
-            cliente = item_cliente.text().lower() if item_cliente else ""
-            corresponde = termo in filme or termo in cliente
-            self.tabela_historico.setRowHidden(linha, not corresponde)
+        t = Trabalhador(rotina)
+        t.sinais.sucesso.connect(self.processar_dados_completos)
+        t.sinais.erro.connect(self.mostrar_erro)
+        t.sinais.finalizado.connect(lambda: self.finalizar_operacao(t))
+        self.trabalhadores.append(t)
+        t.start()
 
-    def abrir_dialogo_cliente(self):
-        janela = DialogoAdicionarCliente(self)
-        janela.cliente_adicionado.connect(self.cadastrar_cliente)
-        janela.exec()
+    def finalizar_operacao(self, t):
+        self.definir_botoes_habilitados(True)
+        self.limpar_trabalhador(t)
 
-    def cadastrar_cliente(self, cliente):
-        for c in self.clientes:
-            if c.cpf == cliente.cpf:
-                QMessageBox.warning(self, "Atenção", f"Já existe um cliente cadastrado com o CPF {cliente.cpf}.")
-                return
-
-        self.clientes.append(cliente)
-        self.atualizar_tabela_clientes()
-        self.statusBar().showMessage(f"Cliente '{cliente.nome}' salvo com sucesso!", 3000)
-
-    def atualizar_tabela_clientes(self):
-        self.tabela_clientes.setRowCount(0)
-        for cliente in self.clientes:
-            linha = self.tabela_clientes.rowCount()
-            self.tabela_clientes.insertRow(linha)
-            self.tabela_clientes.setItem(linha, 0, QTableWidgetItem(cliente.nome))
-            self.tabela_clientes.setItem(linha, 1, QTableWidgetItem(cliente.cpf))
-        self.filtrar_clientes(self.busca_cliente.text())
-
-    def excluir_cliente(self):
-        selecionados = self.tabela_clientes.selectionModel().selectedRows()
-        if not selecionados:
-            QMessageBox.information(self, "Aviso", "Selecione um cliente para excluir.")
-            return
-        idx = selecionados[0].row()
-        cliente_alvo = self.clientes[idx]
-
-        for loc in self.locacoes:
-            if loc.cliente.cpf == cliente_alvo.cpf:
-                QMessageBox.warning(self, "Bloqueado", f"O cliente {cliente_alvo.nome} tem locações ativas e não pode ser excluído.")
-                return
-
-        cliente = self.clientes.pop(idx)
-        self.atualizar_tabela_clientes()
-        self.statusBar().showMessage(f"Cliente {cliente.nome} excluído.", 3000)
-
-    def abrir_dialogo_filme(self):
-        janela = DialogoAdicionarFilme(self)
-        janela.filme_adicionado.connect(self.cadastrar_filme)
-        janela.exec()
-
-    def cadastrar_filme(self, filme):
-        self.filmes.append(filme)
-        self.atualizar_tabela_filmes()
-        self.statusBar().showMessage(f"Filme '{filme.titulo}' salvo!", 3000)
-
-    def atualizar_tabela_filmes(self):
-        self.tabela_filmes.setRowCount(0)
-        for filme in self.filmes:
-            linha = self.tabela_filmes.rowCount()
-            self.tabela_filmes.insertRow(linha)
-            self.tabela_filmes.setItem(linha, 0, QTableWidgetItem(filme.titulo))
-            self.tabela_filmes.setItem(linha, 1, QTableWidgetItem(str(filme.ano)))
-            self.tabela_filmes.setItem(linha, 2, QTableWidgetItem(filme.genero))
-            self.tabela_filmes.setItem(linha, 3, QTableWidgetItem(f"R$ {float(filme.preco):.2f}"))
-            self.tabela_filmes.setItem(linha, 4, QTableWidgetItem(str(filme.quantidade)))
-        self.filtrar_filmes(self.busca_filme.text())
-
-    def excluir_filme(self):
-        selecionados = self.tabela_filmes.selectionModel().selectedRows()
-        if not selecionados:
-            QMessageBox.information(self, "Aviso", "Selecione um filme para excluir.")
-            return
-        idx = selecionados[0].row()
-        filme_alvo = self.filmes[idx]
-
-        for loc in self.locacoes:
-            if loc.filme.titulo == filme_alvo.titulo:
-                QMessageBox.warning(self, "Bloqueado", f"O filme '{filme_alvo.titulo}' está alugado e não pode ser excluído.")
-                return
-
-        filme = self.filmes.pop(idx)
-        self.atualizar_tabela_filmes()
-        self.statusBar().showMessage(f"Filme {filme.titulo} excluído.", 3000)
-
-    def abrir_alugar(self):
-        selecionados = self.tabela_filmes.selectionModel().selectedRows()
-        if not selecionados:
-            QMessageBox.information(self, "Aviso", "Selecione um filme na tabela primeiro.")
-            return
-        if not self.clientes:
-            QMessageBox.warning(self, "Aviso", "Você precisa cadastrar um cliente antes.")
-            return
-
-        idx = selecionados[0].row()
-        filme = self.filmes[idx]
-
-        if filme.quantidade <= 0:
-            QMessageBox.warning(self, "Aviso", "Não há mais cópias disponíveis deste filme.")
-            return
-
-        janela = DialogoAlugarFilme(self.clientes, self)
-        janela.aluguel_confirmado.connect(lambda cliente: self.efetuar_locacao(filme, cliente))
-        janela.exec()
-
-    def efetuar_locacao(self, filme, cliente):
-        filme.quantidade -= 1
-        self.atualizar_tabela_filmes()
-
-        data_atual = datetime.date.today().strftime("%d/%m/%Y")
-        locacao = Locacao(filme, cliente, data_atual)
-
-        self.locacoes.append(locacao)
-        self.atualizar_tabela_locacoes()
-        QMessageBox.information(self, "Sucesso", f"O filme '{filme.titulo}' foi alugado para {cliente.nome}.")
-        self.statusBar().showMessage("Aluguel finalizado.", 3000)
-
-    def atualizar_tabela_locacoes(self):
-        self.tabela_historico.setRowCount(0)
-        for locacao in self.locacoes:
-            linha = self.tabela_historico.rowCount()
-            self.tabela_historico.insertRow(linha)
-            self.tabela_historico.setItem(linha, 0, QTableWidgetItem(locacao.filme.titulo))
-            self.tabela_historico.setItem(linha, 1, QTableWidgetItem(locacao.cliente.nome))
-            self.tabela_historico.setItem(linha, 2, QTableWidgetItem(locacao.data))
-        self.filtrar_locacoes(self.busca_locacao.text())
-
-    def excluir_locacao(self):
-        selecionados = self.tabela_historico.selectionModel().selectedRows()
-        if not selecionados:
-            QMessageBox.information(self, "Aviso", "Selecione uma locação para excluir.")
-            return
-        idx = selecionados[0].row()
-        locacao = self.locacoes.pop(idx)
-
-        locacao.filme.quantidade += 1
-
-        self.atualizar_tabela_locacoes()
-        self.atualizar_tabela_filmes()
-        self.statusBar().showMessage("Locação cancelada e estoque restaurado.", 3000)
-
-    def acao_salvar_dados(self):
-        caminho, filtro = QFileDialog.getSaveFileName(
-            self, "Salvar Dados", "", "JSON Files (*.json);;CSV Files (*.csv)"
-        )
-        if caminho:
-            if not os.path.splitext(caminho)[1]:
-                caminho += ".json" if "json" in filtro.lower() else ".csv"
-
-            self.statusBar().showMessage("Salvando dados em segundo plano...")
-            t = Trabalhador(
-                salvar_dados,
-                list(self.filmes),
-                list(self.clientes),
-                list(self.locacoes),
-                caminho
-            )
-            t.sinais.sucesso.connect(self.mostrar_mensagem_salvar)
-            t.sinais.erro.connect(self.mostrar_erro)
-            t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
-            self.trabalhadores.append(t)
-            t.start()
-
-    def acao_carregar_dados(self):
-        caminho, _ = QFileDialog.getOpenFileName(
-            self, "Carregar Dados", "", "JSON Files (*.json);;CSV Files (*.csv)"
-        )
-        if caminho:
-            self.statusBar().showMessage("Carregando dados em segundo plano...")
-            t = Trabalhador(carregar_dados, caminho)
-            t.sinais.sucesso.connect(self.processar_dados_carregados)
-            t.sinais.erro.connect(self.mostrar_erro)
-            t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
-            self.trabalhadores.append(t)
-            t.start()
-        
-    def limpar_trabalhador(self, t):
-        if t in self.trabalhadores:
-            self.trabalhadores.remove(t)
-
-    def mostrar_mensagem_salvar(self, msg):
-        QMessageBox.information(self, "Salvar", str(msg))
-        self.statusBar().showMessage(str(msg), 3000)
-
-    def processar_dados_carregados(self, dados):
-        self.filmes.clear()
+    def processar_dados_completos(self, dados):
         self.clientes.clear()
-        self.locacoes.clear()
+        for c in dados.get("clientes", []):
+            self.clientes.append(Cliente(c["nome"], c["cpf"]))
 
+        self.filmes.clear()
         for f in dados.get("filmes", []):
             self.filmes.append(
                 Filme(f["titulo"], int(f["ano"]), f["genero"], float(f["preco"]), int(f["quantidade"]))
             )
 
-        for c in dados.get("clientes", []):
-            self.clientes.append(Cliente(c["nome"], c["cpf"]))
-
-        for l in dados.get("locacoes", []):
-            filme_obj = next((f for f in self.filmes if f.titulo == l["filme"]), Filme(l["filme"], 0, "", 0.0, 0))
-            cliente_obj = next((c for c in self.clientes if c.cpf == l["cliente"]), Cliente(l["cliente"], l["cliente"]))
-            self.locacoes.append(Locacao(filme_obj, cliente_obj, l["data"]))
-
-        self.atualizar_tabela_filmes()
         self.atualizar_tabela_clientes()
-        self.atualizar_tabela_locacoes()
-
-        msg = "Dados carregados com sucesso."
-        QMessageBox.information(self, "Carregar", msg)
-        self.statusBar().showMessage(msg, 3000)
+        self.atualizar_tabela_filmes()
+        self.statusBar().showMessage("Dados atualizados da API com sucesso.", 3000)
 
     def mostrar_erro(self, erro):
-        QMessageBox.critical(self, "Erro", f"Ocorreu um erro: {erro}")
-        self.statusBar().showMessage("Erro na operação de arquivo.", 3000)
+        self.definir_botoes_habilitados(True)
+        self.statusBar().showMessage(f"Erro: {erro}", 5000)
+        QMessageBox.critical(self, "Erro", str(erro))
 
-    def closeEvent(self, evento: QCloseEvent):
-        resposta = QMessageBox.question(
-            self, 'Sair', 'Deseja sair do aplicativo?',
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-        )
-        if resposta == QMessageBox.Yes:
-            evento.accept()
-        else:
-            evento.ignore()
+    def abrir_dialogo_cliente(self):
+        dialogo = DialogoAdicionarCliente(self)
+        dialogo.cliente_adicionado.connect(self.requisitar_cadastro_cliente)
+        dialogo.exec()
 
-    def mostrar_sobre(self):
-        QMessageBox.about(
-            self, "Sobre o Sistema",
-            "Locadora de Filmes\n\n"
-            "Feito por:\n"
-            "- Antônio Jonathan Santos Sátiro\n"
-            "- Cauã Aquino Honorato Oliveira\n"
-            "- Pedro Luiz Moura Marques"
+    def requisitar_cadastro_cliente(self, cliente):
+        self.definir_botoes_habilitados(False)
+        self.statusBar().showMessage(f"Cadastrando {cliente.nome}...")
+        t = Trabalhador(api_cliente.cadastrar_cliente, cliente.nome, cliente.cpf)
+        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
+        t.sinais.erro.connect(self.mostrar_erro)
+        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        self.trabalhadores.append(t)
+        t.start()
+
+    def abrir_dialogo_filme(self):
+        dialogo = DialogoAdicionarFilme(self)
+        dialogo.filme_adicionado.connect(self.requisitar_cadastro_filme)
+        dialogo.exec()
+
+    def requisitar_cadastro_filme(self, filme):
+        self.definir_botoes_habilitados(False)
+        self.statusBar().showMessage(f"Cadastrando {filme.titulo}...")
+        t = Trabalhador(
+            api_cliente.cadastrar_filme,
+            filme.titulo, filme.ano, filme.genero, filme.preco, filme.quantidade
         )
+        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
+        t.sinais.erro.connect(self.mostrar_erro)
+        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        self.trabalhadores.append(t)
+        t.start()
+
+    def atualizar_tabela_filmes(self):
+        self.filtrar_filmes(self.busca_filme.text())
+
+    def filtrar_filmes(self, termo):
+        termo = termo.strip().lower()
+        self.tabela_filmes.setRowCount(0)
+        filmes_filtrados = [
+            f for f in self.filmes
+            if termo in f.titulo.lower() or termo in f.genero.lower()
+        ]
+        for f in filmes_filtrados:
+            row = self.tabela_filmes.rowCount()
+            self.tabela_filmes.insertRow(row)
+            self.tabela_filmes.setItem(row, 0, QTableWidgetItem(f.titulo))
+            self.tabela_filmes.setItem(row, 1, QTableWidgetItem(str(f.ano)))
+            self.tabela_filmes.setItem(row, 2, QTableWidgetItem(f.genero))
+            self.tabela_filmes.setItem(row, 3, QTableWidgetItem(f"R$ {f.preco:.2f}"))
+            self.tabela_filmes.setItem(row, 4, QTableWidgetItem(str(f.quantidade)))
+
+    def atualizar_tabela_clientes(self):
+        self.filtrar_clientes(self.busca_cliente.text())
+
+    def filtrar_clientes(self, termo):
+        termo = termo.strip().lower()
+        self.tabela_clientes.setRowCount(0)
+        clientes_filtrados = [
+            c for c in self.clientes
+            if termo in c.nome.lower() or termo in c.cpf.lower()
+        ]
+        for c in clientes_filtrados:
+            row = self.tabela_clientes.rowCount()
+            self.tabela_clientes.insertRow(row)
+            self.tabela_clientes.setItem(row, 0, QTableWidgetItem(c.nome))
+            self.tabela_clientes.setItem(row, 1, QTableWidgetItem(c.cpf))
+
+    def limpar_trabalhador(self, t):
+        if t in self.trabalhadores:
+            self.trabalhadores.remove(t)
+
+    def closeEvent(self, event):
+        for t in self.trabalhadores:
+            t.sinais.sucesso.disconnect()
+            t.sinais.erro.disconnect()
+            t.sinais.finalizado.disconnect()
+        event.accept()
