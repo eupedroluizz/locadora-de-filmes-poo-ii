@@ -1,0 +1,29 @@
+5307dab conecta interface grafica com rotas de clientes e filmes da api
+7eb97d1 cria cliente http e thread worker para requisicoes da api
+361ec43 cria servidor fastapi com rotas completas de clientes e filmes
+12fe65c Adiciona a conexao com postgres e operacoes basicas de cliente e filme
+239ddd1 configura o docker compose do postgres e tabelas iniciais no init sql.
+88392d9 adiciona pasta servidor
+83afcfb atualiza modelos com id de locacao e validacoes nos dialogos
+cd94659 reorganiza estrutura do projeto separando cliente e servidor
+f23eb0c adiciona informacao com as visitas e banner dos cookies
+1ec3597 atualiza o changelog
+9d52217 adiciona logica e interface de busca alem de corrigir erros simples de falta de atencao
+2d80ce4 adiciona cahngelog
+70871b8 ajeita a forma de cadastrar clientes e filmes e as funcoes abrir_alugar e efetuar_locacao
+4ff6f19 substituição de partes do código por threads
+44c4777 Adiciona classes Trabalhador e Sinais para uso de threads nativas
+fe20a13 atualiza o changelog
+2c6eba7 atualiza estoques apos excluir locacao
+07cc957 atualiza o changelog
+d9c1d2e faz a data estar correta ao alugar um filme e valida se ao excluir um filme ou cliente o mesmo nao esta envolvido em uma locacao
+c040c6c apenas melhora do changelog para mais detalhes
+7b052d7 apenas melhora do changelog para mais detalhes
+edcc8a0 integra leitura aos menus e gera changelog da parcial 1
+6acd9b3 Merge: finaliza rotinas de carregamento
+cd6d7e6 finaliza rotinas de carregamento (json e csv)
+8046a85 cria base do arquivos.py funcao de salvar dados
+fbb935b funcao de salvar dados criada e arquivos.py tambem
+aeb2517 adicionado a logica e a parte da interface relacionado a exclusao de dados
+dcdf31e .gitignore adicionado antes que haja algum problema ou erro
+84efafe Adicionado os arquivos de codigo feitos para o trabalho 01
