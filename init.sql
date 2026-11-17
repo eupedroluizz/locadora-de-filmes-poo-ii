@@ -10,3 +10,13 @@ CREATE TABLE IF NOT EXISTS filmes (
     preco NUMERIC(6,2) NOT NULL CHECK (preco > 0),
     quantidade INT NOT NULL CHECK (quantidade >= 0)
 );
+
+CREATE TABLE IF NOT EXISTS locacoes (
+    id SERIAL PRIMARY KEY,
+    cliente_cpf VARCHAR(14) NOT NULL REFERENCES clientes(cpf) ON UPDATE CASCADE,
+    filme_titulo VARCHAR(150) NOT NULL REFERENCES filmes(titulo) ON UPDATE CASCADE,
+    data VARCHAR(30) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_locacoes_cliente ON locacoes(cliente_cpf);
+CREATE INDEX IF NOT EXISTS idx_locacoes_filme ON locacoes(filme_titulo);
