@@ -65,3 +65,56 @@ def listar_filmes():
         raise
     finally:
         conn.close()
+
+def inserir_locacao(cliente_cpf, filme_titulo, data):
+    conn = obter_conexao()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM clientes WHERE cpf = %s;", (cliente_cpf,))
+            if not cur.fetchone():
+                raise ValueError("Cliente nao encontrado.")
+
+            cur.execute("SELECT quantidade FROM filmes WHERE titulo = %s FOR UPDATE;", (filme_titulo,))
+            linha = cur.fetchone()
+            if not linha:
+                raise ValueError("Filme nao encontrado.")
+            qtd_atual = linha[0]
+            if qtd_atual <= 0:
+                raise ValueError("Nao ha exemplares disponiveis para locacao.")
+
+            cur.execute(
+                "UPDATE filmes SET quantidade = quantidade - 1 WHERE titulo = %s;",
+                (filme_titulo,)
+            )
+            cur.execute(
+                "INSERT INTO locacoes (cliente_cpf, filme_titulo, data) VALUES (%s, %s, %s) RETURNING id;",
+                (cliente_cpf, filme_titulo, data)
+            )
+            novo_id = cur.fetchone()[0]
+        conn.commit()
+        return novo_id
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def listar_locacoes():
+    conn = obter_conexao()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            sql = (
+                "SELECT l.id, c.nome AS cliente_nome, c.cpf AS cliente_cpf, "
+                "f.titulo AS filme_titulo, l.data "
+                "FROM locacoes l "
+                "JOIN clientes c ON l.cliente_cpf = c.cpf "
+                "JOIN filmes f ON l.filme_titulo = f.titulo "
+                "ORDER BY l.id DESC;"
+            )
+            cur.execute(sql)
+            return list(cur.fetchall())
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
