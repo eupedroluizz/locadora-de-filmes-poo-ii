@@ -118,3 +118,60 @@ def listar_locacoes():
         raise
     finally:
         conn.close()
+
+def excluir_cliente(cpf):
+    conn = obter_conexao()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM locacoes WHERE cliente_cpf = %s;", (cpf,))
+            total = cur.fetchone()[0]
+            if total > 0:
+                raise ValueError("Cliente possui locacoes associadas e nao pode ser excluido.")
+            cur.execute("DELETE FROM clientes WHERE cpf = %s;", (cpf,))
+            if cur.rowcount == 0:
+                raise ValueError("Cliente nao encontrado.")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def excluir_filme(titulo):
+    conn = obter_conexao()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM locacoes WHERE filme_titulo = %s;", (titulo,))
+            total = cur.fetchone()[0]
+            if total > 0:
+                raise ValueError("Filme possui locacoes associadas e nao pode ser excluido.")
+            cur.execute("DELETE FROM filmes WHERE titulo = %s;", (titulo,))
+            if cur.rowcount == 0:
+                raise ValueError("Filme nao encontrado.")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def excluir_locacao(locacao_id):
+    conn = obter_conexao()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM locacoes WHERE id = %s RETURNING filme_titulo;", (locacao_id,))
+            linha = cur.fetchone()
+            if not linha:
+                raise ValueError("Locacao nao encontrada.")
+            filme_titulo = linha[0]
+
+            cur.execute(
+                "UPDATE filmes SET quantidade = quantidade + 1 WHERE titulo = %s;",
+                (filme_titulo,)
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
