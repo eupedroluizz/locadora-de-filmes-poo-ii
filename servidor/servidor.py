@@ -93,3 +93,65 @@ def adicionar_filme(filme: FilmeEntrada):
         if "unique" in msg.lower() or "duplicate" in msg.lower():
             raise HTTPException(status_code=400, detail="Filme com este titulo ja esta cadastrado.")
         raise HTTPException(status_code=500, detail=msg)
+
+class LocacaoEntrada(BaseModel):
+    cliente_cpf: str
+    filme_titulo: str
+    data: str
+
+@app.delete("/clientes/{cpf}")
+def remover_cliente(cpf: str):
+    cpf_limpo = "".join(ch for ch in cpf if ch.isdigit())
+    alvo = cpf_limpo if len(cpf_limpo) == 11 else cpf.strip()
+    try:
+        banco.excluir_cliente(alvo)
+        return {"status": "sucesso", "mensagem": "Cliente excluido com sucesso."}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/filmes/{titulo:path}")
+def remover_filme(titulo: str):
+    try:
+        banco.excluir_filme(titulo.strip())
+        return {"status": "sucesso", "mensagem": "Filme excluido com sucesso."}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/locacoes")
+def obter_locacoes():
+    try:
+        return banco.listar_locacoes()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/locacoes", status_code=201)
+def adicionar_locacao(locacao: LocacaoEntrada):
+    cpf_limpo = "".join(ch for ch in locacao.cliente_cpf if ch.isdigit())
+    cliente_cpf = cpf_limpo if len(cpf_limpo) == 11 else locacao.cliente_cpf.strip()
+    filme_titulo = locacao.filme_titulo.strip()
+    data = locacao.data.strip()
+    if not data:
+        raise HTTPException(status_code=400, detail="A data da locacao e obrigatoria.")
+    if len(data) > 30:
+        raise HTTPException(status_code=400, detail="A data deve ter no maximo 30 caracteres.")
+    try:
+        novo_id = banco.inserir_locacao(cliente_cpf, filme_titulo, data)
+        return {"status": "sucesso", "mensagem": "Locacao realizada com sucesso.", "id": novo_id}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/locacoes/{locacao_id}")
+def remover_locacao(locacao_id: int):
+    try:
+        banco.excluir_locacao(locacao_id)
+        return {"status": "sucesso", "mensagem": "Locacao excluida e estoque restaurado."}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

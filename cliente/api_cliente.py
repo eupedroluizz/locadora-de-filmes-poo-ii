@@ -68,3 +68,23 @@ def cadastrar_filme(titulo, ano, genero, preco, quantidade):
             "quantidade": quantidade
         }
     )
+
+def excluir_cliente(cpf):
+    return fazer_requisicao(f"/clientes/{urllib.parse.quote(cpf, safe='')}", metodo="DELETE")
+
+def excluir_filme(titulo):
+    return fazer_requisicao(f"/filmes/{urllib.parse.quote(titulo, safe='')}", metodo="DELETE")
+
+def listar_locacoes():
+    return fazer_requisicao("/locacoes", metodo="GET")
+
+def cadastrar_locacao(cliente_cpf, filme_titulo, data):
+    dados = {
+        "cliente_cpf": cliente_cpf,
+        "filme_titulo": filme_titulo,
+        "data": data
+    }
+    return fazer_requisicao("/locacoes", metodo="POST", dados=dados)
+
+def excluir_locacao(locacao_id):
+    return fazer_requisicao(f"/locacoes/{locacao_id}", metodo="DELETE")
