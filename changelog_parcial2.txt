@@ -1,0 +1,17 @@
+51d1aa5 adiciona aba de historico de locacoes exclusoes de linhas e menu de exportacao
+374954f adiciona metodos de locacao e exclusao no cliente http e modulo de exportacao
+55df50b adiciona rotas de locacao e exclusoes na api e cliente http
+7f4e3d3 adiciona funcoes de exclusao de cliente filme e locacao no banco
+7c2f6ae implementa transacao atomica de locacao com lock de estoque e inner join
+2548404 adiciona tabela de locacoes com chaves estrangeiras no init sql
+3571761 adiciona changelog correto da entrega parcial 1 do trabalho 03
+08b5d42 deixa apenas o log do trabalho atual
+1b8a0d1 adiciona changelog da entrega parcial 1
+5307dab conecta interface grafica com rotas de clientes e filmes da api
+7eb97d1 cria cliente http e thread worker para requisicoes da api
+361ec43 cria servidor fastapi com rotas completas de clientes e filmes
+12fe65c Adiciona a conexao com postgres e operacoes basicas de cliente e filme
+239ddd1 configura o docker compose do postgres e tabelas iniciais no init sql.
+88392d9 adiciona pasta servidor
+83afcfb atualiza modelos com id de locacao e validacoes nos dialogos
+cd94659 reorganiza estrutura do projeto separando cliente e servidor
