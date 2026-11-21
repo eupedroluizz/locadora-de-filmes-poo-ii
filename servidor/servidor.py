@@ -79,8 +79,8 @@ def adicionar_filme(filme: FilmeEntrada):
         raise HTTPException(status_code=400, detail="O genero deve ter no maximo 50 caracteres.")
     if filme.ano < 1880 or filme.ano > 2100:
         raise HTTPException(status_code=400, detail="O ano deve estar entre 1880 e 2100.")
-    if filme.preco <= 0:
-        raise HTTPException(status_code=400, detail="O preco da locacao deve ser maior que zero.")
+    if filme.preco <= 0 or filme.preco > 9999.99:
+        raise HTTPException(status_code=400, detail="O preco da locacao deve ser maior que zero e no maximo 9999.99.")
     if filme.quantidade <= 0:
         raise HTTPException(status_code=400, detail="A quantidade de exemplares deve ser maior que zero.")
     try:
@@ -107,7 +107,10 @@ def remover_cliente(cpf: str):
         banco.excluir_cliente(alvo)
         return {"status": "sucesso", "mensagem": "Cliente excluido com sucesso."}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        msg = str(e)
+        if "nao encontrad" in msg.lower():
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -117,7 +120,10 @@ def remover_filme(titulo: str):
         banco.excluir_filme(titulo.strip())
         return {"status": "sucesso", "mensagem": "Filme excluido com sucesso."}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        msg = str(e)
+        if "nao encontrad" in msg.lower():
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -134,6 +140,10 @@ def adicionar_locacao(locacao: LocacaoEntrada):
     cliente_cpf = cpf_limpo if len(cpf_limpo) == 11 else locacao.cliente_cpf.strip()
     filme_titulo = locacao.filme_titulo.strip()
     data = locacao.data.strip()
+    if not cliente_cpf:
+        raise HTTPException(status_code=400, detail="O CPF do cliente e obrigatorio.")
+    if not filme_titulo:
+        raise HTTPException(status_code=400, detail="O titulo do filme e obrigatorio.")
     if not data:
         raise HTTPException(status_code=400, detail="A data da locacao e obrigatoria.")
     if len(data) > 30:
@@ -152,6 +162,9 @@ def remover_locacao(locacao_id: int):
         banco.excluir_locacao(locacao_id)
         return {"status": "sucesso", "mensagem": "Locacao excluida e estoque restaurado."}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        msg = str(e)
+        if "nao encontrad" in msg.lower():
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

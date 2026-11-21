@@ -34,7 +34,7 @@ def fazer_requisicao(caminho, metodo="GET", dados=None):
             conteudo = resp.read().decode("utf-8")
             return json.loads(conteudo) if conteudo else {}
     except urllib.error.HTTPError as e:
-        erro_txt = e.read().decode("utf-8")
+        erro_txt = e.read().decode("utf-8", errors="replace")
         try:
             dados_erro = json.loads(erro_txt)
             detalhe = dados_erro.get("detail", erro_txt)

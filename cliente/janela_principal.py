@@ -51,13 +51,13 @@ class JanelaPrincipal(QMainWindow):
 
         menu.addSeparator()
 
-        btn_exportar_json = QAction("Exportar Dados (JSON)", self)
-        btn_exportar_json.triggered.connect(self.acao_exportar_json)
-        menu.addAction(btn_exportar_json)
+        self.btn_exportar_json = QAction("Exportar Dados (JSON)", self)
+        self.btn_exportar_json.triggered.connect(self.acao_exportar_json)
+        menu.addAction(self.btn_exportar_json)
 
-        btn_exportar_csv = QAction("Exportar Relatorio (CSV)", self)
-        btn_exportar_csv.triggered.connect(self.acao_exportar_csv)
-        menu.addAction(btn_exportar_csv)
+        self.btn_exportar_csv = QAction("Exportar Relatorio (CSV)", self)
+        self.btn_exportar_csv.triggered.connect(self.acao_exportar_csv)
+        menu.addAction(self.btn_exportar_csv)
 
         menu.addSeparator()
 
@@ -75,8 +75,8 @@ class JanelaPrincipal(QMainWindow):
         barra.addAction(self.btn_novo_filme)
         barra.addAction(self.btn_novo_cliente)
         barra.addAction(self.btn_atualizar)
-        barra.addAction(btn_exportar_json)
-        barra.addAction(btn_exportar_csv)
+        barra.addAction(self.btn_exportar_json)
+        barra.addAction(self.btn_exportar_csv)
 
     def montar_abas(self):
         self.abas = QTabWidget()
@@ -164,6 +164,7 @@ class JanelaPrincipal(QMainWindow):
         tabela.setColumnCount(len(colunas))
         tabela.setHorizontalHeaderLabels(colunas)
         tabela.setSelectionBehavior(QAbstractItemView.SelectRows)
+        tabela.setSelectionMode(QAbstractItemView.SingleSelection)
         tabela.setEditTriggers(QAbstractItemView.NoEditTriggers)
         return tabela
 
@@ -175,6 +176,10 @@ class JanelaPrincipal(QMainWindow):
         self.btn_novo_filme.setEnabled(habilitado)
         self.btn_novo_cliente.setEnabled(habilitado)
         self.btn_atualizar.setEnabled(habilitado)
+        if hasattr(self, "btn_exportar_json"):
+            self.btn_exportar_json.setEnabled(habilitado)
+        if hasattr(self, "btn_exportar_csv"):
+            self.btn_exportar_csv.setEnabled(habilitado)
 
     def carregar_dados_completos(self):
         self.definir_botoes_habilitados(False)
