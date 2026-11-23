@@ -521,6 +521,6 @@ class JanelaPrincipal(QMainWindow):
             "Desenvolvido por:\n"
             "- Antonio Jonathan Santos Satiro\n"
             "- Caua Aquino Honorato Oliveira\n"
-            "- Pedro Luiz Moura Marques\n\n"
+            "- Pedro Luiz de Moura Marques\n\n"
             "UFPI - CSHNB"
         )
