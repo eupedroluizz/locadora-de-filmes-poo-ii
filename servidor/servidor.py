@@ -1,7 +1,11 @@
+import math
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import banco
+try:
+    import banco
+except ImportError:
+    from servidor import banco
 
 app = FastAPI(title="Locadora API - Completa")
 
@@ -54,7 +58,7 @@ def adicionar_cliente(cliente: ClienteEntrada):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         msg = str(e)
-        if "unique" in msg.lower() or "duplicate" in msg.lower():
+        if getattr(e, "pgcode", None) == "23505" or "unique" in msg.lower() or "duplicate" in msg.lower() or "unicidade" in msg.lower():
             raise HTTPException(status_code=400, detail="Cliente com este CPF ja esta cadastrado.")
         raise HTTPException(status_code=500, detail=msg)
 
@@ -79,10 +83,10 @@ def adicionar_filme(filme: FilmeEntrada):
         raise HTTPException(status_code=400, detail="O genero deve ter no maximo 50 caracteres.")
     if filme.ano < 1880 or filme.ano > 2100:
         raise HTTPException(status_code=400, detail="O ano deve estar entre 1880 e 2100.")
-    if filme.preco <= 0 or filme.preco > 9999.99:
+    if not math.isfinite(filme.preco) or round(filme.preco, 2) < 0.01 or filme.preco > 9999.99:
         raise HTTPException(status_code=400, detail="O preco da locacao deve ser maior que zero e no maximo 9999.99.")
-    if filme.quantidade <= 0:
-        raise HTTPException(status_code=400, detail="A quantidade de exemplares deve ser maior que zero.")
+    if filme.quantidade <= 0 or filme.quantidade > 2147483647:
+        raise HTTPException(status_code=400, detail="A quantidade de exemplares deve estar entre 1 e 2147483647.")
     try:
         banco.inserir_filme(titulo, filme.ano, genero, filme.preco, filme.quantidade)
         return {"status": "sucesso", "mensagem": "Filme cadastrado com sucesso."}
@@ -90,7 +94,7 @@ def adicionar_filme(filme: FilmeEntrada):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         msg = str(e)
-        if "unique" in msg.lower() or "duplicate" in msg.lower():
+        if getattr(e, "pgcode", None) == "23505" or "unique" in msg.lower() or "duplicate" in msg.lower() or "unicidade" in msg.lower():
             raise HTTPException(status_code=400, detail="Filme com este titulo ja esta cadastrado.")
         raise HTTPException(status_code=500, detail=msg)
 
@@ -158,6 +162,8 @@ def adicionar_locacao(locacao: LocacaoEntrada):
 
 @app.delete("/locacoes/{locacao_id}")
 def remover_locacao(locacao_id: int):
+    if locacao_id <= 0 or locacao_id > 2147483647:
+        raise HTTPException(status_code=404, detail="Locacao nao encontrada.")
     try:
         banco.excluir_locacao(locacao_id)
         return {"status": "sucesso", "mensagem": "Locacao excluida e estoque restaurado."}

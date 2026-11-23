@@ -1,6 +1,5 @@
 import json
 import csv
-import os
 
 def exportar_dados_json(filmes, clientes, locacoes, caminho):
     dados = {
@@ -34,7 +33,7 @@ def exportar_dados_json(filmes, clientes, locacoes, caminho):
     return f"Exportacao JSON concluida com sucesso no arquivo:\n{caminho}"
 
 def exportar_dados_csv(filmes, clientes, locacoes, caminho):
-    base, _ = os.path.splitext(caminho)
+    base = caminho[:-4] if caminho.lower().endswith(".csv") else caminho
     for sufixo in ["_filmes", "_clientes", "_locacoes"]:
         if base.endswith(sufixo):
             base = base[:-len(sufixo)]

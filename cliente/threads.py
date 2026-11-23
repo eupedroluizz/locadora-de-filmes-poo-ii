@@ -12,7 +12,7 @@ class Trabalhador(QObject):
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
-        self.sinais = Sinais()
+        self.sinais = Sinais(self)
         self._thread = threading.Thread(target=self._run, daemon=True)
 
     def _run(self):

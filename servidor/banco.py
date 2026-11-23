@@ -1,11 +1,12 @@
 import os
 import psycopg2
+from psycopg2 import errors as pg_errors
 from psycopg2.extras import RealDictCursor
 
 def obter_conexao():
     return psycopg2.connect(
         host=os.environ.get("BANCO_HOST", "localhost"),
-        port=int(os.environ.get("BANCO_PORT", 5432)),
+        port=int(os.environ.get("BANCO_PORT") or 5432),
         user=os.environ.get("BANCO_USER", "postgres"),
         password=os.environ.get("BANCO_PASSWORD", "postgrespassword"),
         dbname=os.environ.get("BANCO_NOME", "locadora"),
@@ -18,6 +19,9 @@ def inserir_cliente(nome, cpf):
         with conn.cursor() as cur:
             cur.execute("INSERT INTO clientes (nome, cpf) VALUES (%s, %s);", (nome, cpf))
         conn.commit()
+    except pg_errors.UniqueViolation:
+        conn.rollback()
+        raise ValueError("Cliente com este CPF ja esta cadastrado.")
     except Exception:
         conn.rollback()
         raise
@@ -45,6 +49,9 @@ def inserir_filme(titulo, ano, genero, preco, quantidade):
                 (titulo, ano, genero, preco, quantidade)
             )
         conn.commit()
+    except pg_errors.UniqueViolation:
+        conn.rollback()
+        raise ValueError("Filme com este titulo ja esta cadastrado.")
     except Exception:
         conn.rollback()
         raise
@@ -70,7 +77,7 @@ def inserir_locacao(cliente_cpf, filme_titulo, data):
     conn = obter_conexao()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM clientes WHERE cpf = %s;", (cliente_cpf,))
+            cur.execute("SELECT 1 FROM clientes WHERE cpf = %s FOR SHARE;", (cliente_cpf,))
             if not cur.fetchone():
                 raise ValueError("Cliente nao encontrado.")
 
@@ -93,6 +100,9 @@ def inserir_locacao(cliente_cpf, filme_titulo, data):
             novo_id = cur.fetchone()[0]
         conn.commit()
         return novo_id
+    except pg_errors.ForeignKeyViolation:
+        conn.rollback()
+        raise ValueError("Cliente ou filme nao encontrado para realizar a locacao.")
     except Exception:
         conn.rollback()
         raise
@@ -123,6 +133,9 @@ def excluir_cliente(cpf):
     conn = obter_conexao()
     try:
         with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM clientes WHERE cpf = %s FOR UPDATE;", (cpf,))
+            if not cur.fetchone():
+                raise ValueError("Cliente nao encontrado.")
             cur.execute("SELECT COUNT(*) FROM locacoes WHERE cliente_cpf = %s;", (cpf,))
             total = cur.fetchone()[0]
             if total > 0:
@@ -131,6 +144,9 @@ def excluir_cliente(cpf):
             if cur.rowcount == 0:
                 raise ValueError("Cliente nao encontrado.")
         conn.commit()
+    except pg_errors.ForeignKeyViolation:
+        conn.rollback()
+        raise ValueError("Cliente possui locacoes associadas e nao pode ser excluido.")
     except Exception:
         conn.rollback()
         raise
@@ -141,6 +157,9 @@ def excluir_filme(titulo):
     conn = obter_conexao()
     try:
         with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM filmes WHERE titulo = %s FOR UPDATE;", (titulo,))
+            if not cur.fetchone():
+                raise ValueError("Filme nao encontrado.")
             cur.execute("SELECT COUNT(*) FROM locacoes WHERE filme_titulo = %s;", (titulo,))
             total = cur.fetchone()[0]
             if total > 0:
@@ -149,6 +168,9 @@ def excluir_filme(titulo):
             if cur.rowcount == 0:
                 raise ValueError("Filme nao encontrado.")
         conn.commit()
+    except pg_errors.ForeignKeyViolation:
+        conn.rollback()
+        raise ValueError("Filme possui locacoes associadas e nao pode ser excluido.")
     except Exception:
         conn.rollback()
         raise

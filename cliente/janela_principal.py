@@ -23,6 +23,7 @@ class JanelaPrincipal(QMainWindow):
         self.filmes = []
         self.locacoes = []
         self.trabalhadores = []
+        self._fechando = False
 
         self.montar_menus()
         self.montar_abas()
@@ -191,17 +192,32 @@ class JanelaPrincipal(QMainWindow):
             return {"clientes": c, "filmes": f, "locacoes": l}
 
         t = Trabalhador(rotina)
-        t.sinais.sucesso.connect(self.processar_dados_completos)
-        t.sinais.erro.connect(self.mostrar_erro)
-        t.sinais.finalizado.connect(lambda: self.finalizar_operacao(t))
+        t.sinais.sucesso.connect(self.processar_dados_completos, Qt.QueuedConnection)
+        t.sinais.erro.connect(self.mostrar_erro, Qt.QueuedConnection)
+        t.sinais.finalizado.connect(self.finalizar_carregamento, Qt.QueuedConnection)
         self.trabalhadores.append(t)
         t.start()
 
-    def finalizar_operacao(self, t):
-        self.definir_botoes_habilitados(True)
+    def finalizar_carregamento(self):
+        sinais = self.sender()
+        t = sinais.parent() if sinais is not None else None
+        if not self._fechando:
+            self.definir_botoes_habilitados(True)
+        self.limpar_trabalhador(t)
+
+    def ao_concluir_mutacao(self, _resultado):
+        if self._fechando:
+            return
+        self.carregar_dados_completos()
+
+    def finalizar_mutacao(self):
+        sinais = self.sender()
+        t = sinais.parent() if sinais is not None else None
         self.limpar_trabalhador(t)
 
     def processar_dados_completos(self, dados):
+        if self._fechando:
+            return
         self.clientes.clear()
         for c in dados.get("clientes", []):
             self.clientes.append(Cliente(c["nome"], c["cpf"]))
@@ -232,9 +248,9 @@ class JanelaPrincipal(QMainWindow):
         self.definir_botoes_habilitados(False)
         self.statusBar().showMessage(f"Cadastrando {cliente.nome}...")
         t = Trabalhador(api_cliente.cadastrar_cliente, cliente.nome, cliente.cpf)
-        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
-        t.sinais.erro.connect(self.mostrar_erro)
-        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        t.sinais.sucesso.connect(self.ao_concluir_mutacao, Qt.QueuedConnection)
+        t.sinais.erro.connect(self.mostrar_erro, Qt.QueuedConnection)
+        t.sinais.finalizado.connect(self.finalizar_mutacao, Qt.QueuedConnection)
         self.trabalhadores.append(t)
         t.start()
 
@@ -250,9 +266,9 @@ class JanelaPrincipal(QMainWindow):
             api_cliente.cadastrar_filme,
             filme.titulo, filme.ano, filme.genero, filme.preco, filme.quantidade
         )
-        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
-        t.sinais.erro.connect(self.mostrar_erro)
-        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        t.sinais.sucesso.connect(self.ao_concluir_mutacao, Qt.QueuedConnection)
+        t.sinais.erro.connect(self.mostrar_erro, Qt.QueuedConnection)
+        t.sinais.finalizado.connect(self.finalizar_mutacao, Qt.QueuedConnection)
         self.trabalhadores.append(t)
         t.start()
 
@@ -263,7 +279,10 @@ class JanelaPrincipal(QMainWindow):
             return
 
         idx = linhas[0].row()
-        filme_titulo = self.tabela_filmes.item(idx, 0).text()
+        item_titulo = self.tabela_filmes.item(idx, 0)
+        if not item_titulo:
+            return
+        filme_titulo = item_titulo.text()
         filme_selecionado = next((f for f in self.filmes if f.titulo == filme_titulo), None)
 
         if not filme_selecionado:
@@ -286,9 +305,9 @@ class JanelaPrincipal(QMainWindow):
         self.definir_botoes_habilitados(False)
         self.statusBar().showMessage("Processando locacao...")
         t = Trabalhador(api_cliente.cadastrar_locacao, cliente.cpf, filme.titulo, data_atual)
-        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
-        t.sinais.erro.connect(self.mostrar_erro)
-        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        t.sinais.sucesso.connect(self.ao_concluir_mutacao, Qt.QueuedConnection)
+        t.sinais.erro.connect(self.mostrar_erro, Qt.QueuedConnection)
+        t.sinais.finalizado.connect(self.finalizar_mutacao, Qt.QueuedConnection)
         self.trabalhadores.append(t)
         t.start()
 
@@ -315,9 +334,9 @@ class JanelaPrincipal(QMainWindow):
         self.definir_botoes_habilitados(False)
         self.statusBar().showMessage(f"Excluindo {titulo}...")
         t = Trabalhador(api_cliente.excluir_filme, titulo)
-        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
-        t.sinais.erro.connect(self.mostrar_erro)
-        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        t.sinais.sucesso.connect(self.ao_concluir_mutacao, Qt.QueuedConnection)
+        t.sinais.erro.connect(self.mostrar_erro, Qt.QueuedConnection)
+        t.sinais.finalizado.connect(self.finalizar_mutacao, Qt.QueuedConnection)
         self.trabalhadores.append(t)
         t.start()
 
@@ -346,9 +365,9 @@ class JanelaPrincipal(QMainWindow):
         self.definir_botoes_habilitados(False)
         self.statusBar().showMessage(f"Excluindo {nome}...")
         t = Trabalhador(api_cliente.excluir_cliente, cpf)
-        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
-        t.sinais.erro.connect(self.mostrar_erro)
-        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        t.sinais.sucesso.connect(self.ao_concluir_mutacao, Qt.QueuedConnection)
+        t.sinais.erro.connect(self.mostrar_erro, Qt.QueuedConnection)
+        t.sinais.finalizado.connect(self.finalizar_mutacao, Qt.QueuedConnection)
         self.trabalhadores.append(t)
         t.start()
 
@@ -362,7 +381,7 @@ class JanelaPrincipal(QMainWindow):
         item_filme = self.tabela_historico.item(idx, 0)
         locacao_id = item_filme.data(Qt.UserRole) if item_filme else None
         locacao_alvo = next((l for l in self.locacoes if l.locacao_id == locacao_id), None)
-        if not locacao_alvo or not locacao_id:
+        if not locacao_alvo or locacao_id is None:
             QMessageBox.warning(self, "Aviso", "Nao foi possivel identificar a locacao selecionada.")
             return
 
@@ -377,9 +396,9 @@ class JanelaPrincipal(QMainWindow):
         self.definir_botoes_habilitados(False)
         self.statusBar().showMessage("Cancelando locacao...")
         t = Trabalhador(api_cliente.excluir_locacao, locacao_alvo.locacao_id)
-        t.sinais.sucesso.connect(lambda r: self.carregar_dados_completos())
-        t.sinais.erro.connect(self.mostrar_erro)
-        t.sinais.finalizado.connect(lambda: self.limpar_trabalhador(t))
+        t.sinais.sucesso.connect(self.ao_concluir_mutacao, Qt.QueuedConnection)
+        t.sinais.erro.connect(self.mostrar_erro, Qt.QueuedConnection)
+        t.sinais.finalizado.connect(self.finalizar_mutacao, Qt.QueuedConnection)
         self.trabalhadores.append(t)
         t.start()
 
@@ -431,9 +450,12 @@ class JanelaPrincipal(QMainWindow):
 
     def filtrar_clientes(self, termo):
         termo = termo.lower().strip()
+        termo_cpf = "".join(ch for ch in termo if ch.isdigit()) if set(termo).issubset(set("0123456789.- ")) else ""
         clientes_filtrados = [
             c for c in self.clientes
-            if termo in c.nome.lower() or termo in c.cpf.lower()
+            if termo in c.nome.lower()
+            or termo in c.cpf.lower()
+            or (termo_cpf and termo_cpf in c.cpf)
         ]
         self.tabela_clientes.setRowCount(0)
         for i, cliente in enumerate(clientes_filtrados):
@@ -443,9 +465,14 @@ class JanelaPrincipal(QMainWindow):
 
     def filtrar_locacoes(self, termo):
         termo = termo.lower().strip()
+        termo_cpf = "".join(ch for ch in termo if ch.isdigit()) if set(termo).issubset(set("0123456789.- ")) else ""
         locacoes_filtradas = [
             l for l in self.locacoes
-            if termo in l.filme.titulo.lower() or termo in l.cliente.nome.lower() or termo in l.cliente.cpf.lower() or termo in l.data
+            if termo in l.filme.titulo.lower()
+            or termo in l.cliente.nome.lower()
+            or termo in l.cliente.cpf.lower()
+            or (termo_cpf and termo_cpf in l.cliente.cpf)
+            or termo in l.data.lower()
         ]
         self.tabela_historico.setRowCount(0)
         for i, loc in enumerate(locacoes_filtradas):
@@ -458,10 +485,14 @@ class JanelaPrincipal(QMainWindow):
             self.tabela_historico.setItem(i, 3, QTableWidgetItem(loc.data))
 
     def limpar_trabalhador(self, t):
-        if t in self.trabalhadores:
-            self.trabalhadores.remove(t)
+        if t is not None:
+            if t in self.trabalhadores:
+                self.trabalhadores.remove(t)
+            t.deleteLater()
 
     def mostrar_erro(self, erro):
+        if self._fechando:
+            return
         self.definir_botoes_habilitados(True)
         QMessageBox.critical(self, "Erro", str(erro))
         self.statusBar().showMessage(f"Erro: {erro}", 5000)
@@ -472,13 +503,13 @@ class JanelaPrincipal(QMainWindow):
             QMessageBox.Yes | QMessageBox.No
         )
         if resposta == QMessageBox.Yes:
+            self._fechando = True
             for t in list(self.trabalhadores):
-                try:
-                    t.sinais.sucesso.disconnect()
-                    t.sinais.erro.disconnect()
-                    t.sinais.finalizado.disconnect()
-                except Exception:
-                    pass
+                for sinal in (t.sinais.sucesso, t.sinais.erro, t.sinais.finalizado):
+                    try:
+                        sinal.disconnect()
+                    except Exception:
+                        pass
             evento.accept()
         else:
             evento.ignore()

@@ -1,3 +1,4 @@
+import datetime
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QMessageBox, QComboBox, QSpinBox, QDoubleSpinBox
@@ -25,7 +26,7 @@ class DialogoAdicionarCliente(QDialog):
         box_cpf = QHBoxLayout()
         box_cpf.addWidget(QLabel("CPF:"))
         self.campo_cpf = QLineEdit()
-        self.campo_cpf.setMaxLength(14)
+        self.campo_cpf.setMaxLength(18)
         self.campo_cpf.setPlaceholderText("000.000.000-00")
         box_cpf.addWidget(self.campo_cpf)
         layout_principal.addLayout(box_cpf)
@@ -86,7 +87,7 @@ class DialogoAdicionarFilme(QDialog):
         box_ano.addWidget(QLabel("Ano:"))
         self.campo_ano = QSpinBox()
         self.campo_ano.setRange(1880, 2100)
-        self.campo_ano.setValue(2026)
+        self.campo_ano.setValue(datetime.date.today().year)
         box_ano.addWidget(self.campo_ano)
         layout_principal.addLayout(box_ano)
 
@@ -103,7 +104,7 @@ class DialogoAdicionarFilme(QDialog):
         box_preco = QHBoxLayout()
         box_preco.addWidget(QLabel("Preco (R$):"))
         self.campo_preco = QDoubleSpinBox()
-        self.campo_preco.setRange(0.01, 999.99)
+        self.campo_preco.setRange(0.01, 9999.99)
         self.campo_preco.setValue(10.00)
         self.campo_preco.setPrefix("R$ ")
         box_preco.addWidget(self.campo_preco)

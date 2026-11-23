@@ -1,5 +1,6 @@
 import os
 import json
+import http.client
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -28,13 +29,16 @@ def fazer_requisicao(caminho, metodo="GET", dados=None):
         cabecalhos["Content-Type"] = "application/json"
         corpo = json.dumps(dados).encode("utf-8")
 
-    req = urllib.request.Request(url, data=corpo, headers=cabecalhos, method=metodo)
     try:
+        req = urllib.request.Request(url, data=corpo, headers=cabecalhos, method=metodo)
         with urllib.request.urlopen(req, timeout=10) as resp:
-            conteudo = resp.read().decode("utf-8")
+            conteudo = resp.read().decode("utf-8", errors="replace")
             return json.loads(conteudo) if conteudo else {}
     except urllib.error.HTTPError as e:
-        erro_txt = e.read().decode("utf-8", errors="replace")
+        try:
+            erro_txt = e.read().decode("utf-8", errors="replace")
+        finally:
+            e.close()
         try:
             dados_erro = json.loads(erro_txt)
             detalhe = dados_erro.get("detail", erro_txt)
@@ -43,8 +47,13 @@ def fazer_requisicao(caminho, metodo="GET", dados=None):
                 detalhe = "; ".join(mensagens)
         except Exception:
             detalhe = erro_txt
-        raise RuntimeError(str(detalhe))
-    except (urllib.error.URLError, TimeoutError, ConnectionError):
+        detalhe_str = str(detalhe).strip() if detalhe is not None else ""
+        if not detalhe_str:
+            detalhe_str = f"Erro HTTP {e.code} ao comunicar com o servidor."
+        raise RuntimeError(detalhe_str)
+    except json.JSONDecodeError:
+        raise RuntimeError("Resposta invalida recebida do servidor da API.")
+    except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException, ValueError):
         raise RuntimeError("Nao foi possivel conectar ao servidor da API.")
 
 def listar_clientes():
